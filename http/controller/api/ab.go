@@ -93,7 +93,11 @@ func (a *Ab) UpAb(c *gin.Context) {
 		return
 	}
 
-	service.AllService.TagService.UpdateTags(user.Id, tc)
+	err = service.AllService.TagService.UpdateTags(user.Id, tc)
+	if err != nil {
+		response.Error(c, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		return
+	}
 
 	c.JSON(http.StatusOK, nil)
 }

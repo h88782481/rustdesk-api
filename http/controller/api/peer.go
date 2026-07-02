@@ -38,18 +38,13 @@ func (p *Peer) SysInfo(c *gin.Context) {
 		// 覆盖旧记录(含id、uuid)，并同步修正地址簿中的旧id，避免出现重复设备。
 		old := service.AllService.PeerService.FindByHardware(f.Cpu, f.Hostname, f.Memory)
 		if old.RowId > 0 {
-			oldId := old.Id
 			fpe.RowId = old.RowId
 			fpe.UserId = old.UserId
 			if fpe.UserId == 0 {
 				fpe.UserId = service.AllService.UserService.FindLatestUserIdFromLoginLogByUuid(fpe.Uuid, fpe.Id)
 			}
-			err = service.AllService.PeerService.Update(fpe)
+			err = service.AllService.PeerService.TakeOver(old, fpe)
 			if err != nil {
-				response.Error(c, response.TranslateMsg(c, "OperationFailed")+err.Error())
-				return
-			}
-			if err = service.AllService.AddressBookService.ChangeId(oldId, fpe.Id); err != nil {
 				response.Error(c, response.TranslateMsg(c, "OperationFailed")+err.Error())
 				return
 			}

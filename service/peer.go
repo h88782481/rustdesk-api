@@ -33,6 +33,25 @@ func (ps *PeerService) FindByHardware(cpu, hostname, memory string) *model.Peer 
 		First(p)
 	return p
 }
+
+// TakeOver 用新上报的信息覆盖硬件匹配到的旧设备记录(含id、uuid)，
+// 并在同一事务中把所有用户地址簿中的旧id修正为新id。
+// fpe.RowId 需由调用方预先设置为旧记录的主键。
+func (ps *PeerService) TakeOver(old *model.Peer, fpe *model.Peer) error {
+	return DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(fpe).Updates(fpe).Error; err != nil {
+			return err
+		}
+		if old.Id != "" && old.Id != fpe.Id {
+			if err := tx.Model(&model.AddressBook{}).
+				Where("id = ?", old.Id).
+				Update("id", fpe.Id).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
 func (ps *PeerService) InfoByRowId(id uint) *model.Peer {
 	p := &model.Peer{}
 	DB.Where("row_id = ?", id).First(p)
@@ -153,6 +172,9 @@ func (ps *PeerService) GetUuidListByIDs(ids []uint) ([]string, error) {
 // BatchDelete 批量删除, 同时也应该删除token
 func (ps *PeerService) BatchDelete(ids []uint) error {
 	uuids, err := ps.GetUuidListByIDs(ids)
+	if err != nil {
+		return err
+	}
 	err = DB.Where("row_id in (?)", ids).Delete(&model.Peer{}).Error
 	if err != nil {
 		return err

@@ -51,63 +51,61 @@ func (s *AddressBookService) AddAddressBook(ab *model.AddressBook) error {
 	return DB.Create(ab).Error
 }
 
-// ChangeId 设备id变更后，同步修正所有用户地址簿中的旧id
-func (s *AddressBookService) ChangeId(oldId, newId string) error {
-	if oldId == "" || newId == "" || oldId == newId {
-		return nil
-	}
-	return DB.Model(&model.AddressBook{}).Where("id = ?", oldId).Update("id", newId).Error
-}
-
 // UpdateAddressBook
 func (s *AddressBookService) UpdateAddressBook(abs []*model.AddressBook, userId uint) error {
 	//比较peers和数据库中的数据，如果peers中的数据在数据库中不存在，则添加，如果存在则更新，如果数据库中的数据在peers中不存在，则删除
-	// 开始事务
-	tx := DB.Begin()
-	//1. 获取数据库中的数据
-	var dbABs []*model.AddressBook
-	tx.Where("user_id = ?", userId).Find(&dbABs)
-	//2. 比较peers和数据库中的数据
-	//2.1 获取peers中的id
-	aBIds := make(map[string]*model.AddressBook)
-	for _, ab := range abs {
-		aBIds[ab.Id] = ab
-	}
-	//2.2 获取数据库中的id
-	dbABIds := make(map[string]*model.AddressBook)
-	for _, dbAb := range dbABs {
-		dbABIds[dbAb.Id] = dbAb
-	}
-	//2.3 比较peers和数据库中的数据
-	for id, ab := range aBIds {
-		dbAB, ok := dbABIds[id]
-		ab.UserId = userId
-		if !ok {
-			//添加
-			if ab.Platform == "" || ab.Username == "" || ab.Hostname == "" {
-				peer := AllService.PeerService.FindById(ab.Id)
-				if peer.RowId != 0 {
-					ab.Platform = AllService.AddressBookService.PlatformFromOs(peer.Os)
-					ab.Username = peer.Username
-					ab.Hostname = peer.Hostname
+	return DB.Transaction(func(tx *gorm.DB) error {
+		//1. 获取数据库中的数据
+		var dbABs []*model.AddressBook
+		if err := tx.Where("user_id = ?", userId).Find(&dbABs).Error; err != nil {
+			return err
+		}
+		//2. 比较peers和数据库中的数据
+		//2.1 获取peers中的id
+		aBIds := make(map[string]*model.AddressBook)
+		for _, ab := range abs {
+			aBIds[ab.Id] = ab
+		}
+		//2.2 获取数据库中的id
+		dbABIds := make(map[string]*model.AddressBook)
+		for _, dbAb := range dbABs {
+			dbABIds[dbAb.Id] = dbAb
+		}
+		//2.3 比较peers和数据库中的数据
+		for id, ab := range aBIds {
+			dbAB, ok := dbABIds[id]
+			ab.UserId = userId
+			if !ok {
+				//添加
+				if ab.Platform == "" || ab.Username == "" || ab.Hostname == "" {
+					peer := AllService.PeerService.FindById(ab.Id)
+					if peer.RowId != 0 {
+						ab.Platform = AllService.AddressBookService.PlatformFromOs(peer.Os)
+						ab.Username = peer.Username
+						ab.Hostname = peer.Hostname
+					}
+				}
+				if err := tx.Create(ab).Error; err != nil {
+					return err
+				}
+			} else {
+				//更新
+				if err := tx.Model(&model.AddressBook{}).Where("row_id = ?", dbAB.RowId).Updates(ab).Error; err != nil {
+					return err
 				}
 			}
-			tx.Create(ab)
-		} else {
-			//更新
-			tx.Model(&model.AddressBook{}).Where("row_id = ?", dbAB.RowId).Updates(ab)
 		}
-	}
-	//2.4 删除
-	for id, dbAB := range dbABIds {
-		_, ok := aBIds[id]
-		if !ok {
-			tx.Delete(dbAB)
+		//2.4 删除
+		for id, dbAB := range dbABIds {
+			_, ok := aBIds[id]
+			if !ok {
+				if err := tx.Delete(dbAB).Error; err != nil {
+					return err
+				}
+			}
 		}
-	}
-	tx.Commit()
-	return nil
-
+		return nil
+	})
 }
 
 func (s *AddressBookService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *model.AddressBookList) {
@@ -288,11 +286,15 @@ func (s *AddressBookService) UpdateCollection(t *model.AddressBookCollection) er
 
 func (s *AddressBookService) DeleteCollection(t *model.AddressBookCollection) error {
 	//删除集合下的所有规则、地址簿，再删除集合
-	tx := DB.Begin()
-	tx.Where("collection_id = ?", t.Id).Delete(&model.AddressBookCollectionRule{})
-	tx.Where("collection_id = ?", t.Id).Delete(&model.AddressBook{})
-	tx.Delete(t)
-	return tx.Commit().Error
+	return DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("collection_id = ?", t.Id).Delete(&model.AddressBookCollectionRule{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("collection_id = ?", t.Id).Delete(&model.AddressBook{}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(t).Error
+	})
 }
 
 func (s *AddressBookService) RuleInfoById(u uint) *model.AddressBookCollectionRule {
