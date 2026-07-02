@@ -8,12 +8,12 @@ desktop software that provides self-hosted solutions.
 <img src="https://img.shields.io/badge/gin-v1.9.0-lightBlue"/>
 <img src="https://img.shields.io/badge/gorm-v1.25.7-green"/>
 <img src="https://img.shields.io/badge/swag-v1.16.3-yellow"/>
-<img src="https://goreportcard.com/badge/github.com/lejianwen/rustdesk-api/v2"/>
-<img src="https://github.com/lejianwen/rustdesk-api/actions/workflows/build.yml/badge.svg"/>
+<img src="https://goreportcard.com/badge/github.com/h88782481/rustdesk-api/v2"/>
+<img src="https://github.com/h88782481/rustdesk-api/actions/workflows/build.yml/badge.svg"/>
 </div>
 
-## Better used with [lejianwen/rustdesk-server].
-> [lejianwen/rustdesk-server] is a fork of the official RustDesk Server repository.
+## Better used with [h88782481/rustdesk-server].
+> [h88782481/rustdesk-server] is a fork of the official RustDesk Server repository.
 > 1. Solves the API connection timeout issue.
 > 2. Can enforce login before initiating a connection.
 > 3. Supports client websocket.
@@ -79,7 +79,7 @@ Basic implementation of the PC client's primary interfaces.Supports the Personal
 ### Web Admin
 
 * The frontend and backend are separated to provide a user-friendly management interface, primarily for managing and
-displaying data.Frontend code is available at [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)
+displaying data.Frontend code is available at [rustdesk-api-web](https://github.com/h88782481/rustdesk-api-web)
 
 * Admin panel URL: `http://<your server[:port]>/_admin/`
 * For the initial installation, the admin username is `admin`, and the password will be printed in the console. You can change the password via the [command line](#CLI).
@@ -198,7 +198,7 @@ The table below does not list all configurations. Please refer to the configurat
 | RUSTDESK_API_PROXY_ENABLE                              | proxy_enable :`false`, `true`                                                                                                                       | `false`                       |
 | RUSTDESK_API_PROXY_HOST                                | proxy_host                                                                                                                                          | `http://127.0.0.1:1080`       |
 | ----JWT----                                            | --------                                                                                                                                            | --------                      |
-| RUSTDESK_API_JWT_KEY                                   | Custom JWT KEY, if empty JWT is not enabled.<br/>If `MUST_LOGIN` from `lejianwen/rustdesk-server` is not used, it is recommended to leave it empty. |                               |
+| RUSTDESK_API_JWT_KEY                                   | Custom JWT KEY, if empty JWT is not enabled.<br/>If `MUST_LOGIN` from `h88782481/rustdesk-server` is not used, it is recommended to leave it empty. |                               |
 | RUSTDESK_API_JWT_EXPIRE_DURATION                       | JWT expire duration                                                                                                                                 | `168h`                        |
 
 ### Installation Steps
@@ -216,20 +216,20 @@ The table below does not list all configurations. Please refer to the configurat
     -e RUSTDESK_API_RUSTDESK_RELAY_SERVER=192.168.1.66:21117 \
     -e RUSTDESK_API_RUSTDESK_API_SERVER=http://192.168.1.66:21114 \
     -e RUSTDESK_API_RUSTDESK_KEY=abc123456 \
-    lejianwen/rustdesk-api
+    ghcr.io/h88782481/rustdesk-api
     ```
 
 2. Using `docker-compose`,look [WIKI](https://github.com/lejianwen/rustdesk-api/wiki)
 
 #### Running from Release
 
-Download the release from [release](https://github.com/lejianwen/rustdesk-api/releases).
+Download the release from [release](https://github.com/h88782481/rustdesk-api/releases).
 
 #### Source Installation
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/lejianwen/rustdesk-api.git
+   git clone https://github.com/h88782481/rustdesk-api.git
    cd rustdesk-api
    ```
 
@@ -242,11 +242,11 @@ Download the release from [release](https://github.com/lejianwen/rustdesk-api/re
     ```
 
 3. Build the admin front-end (the front-end code is
-   in [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)):
+   in [rustdesk-api-web](https://github.com/h88782481/rustdesk-api-web)):
    ```bash
    cd resources
    mkdir -p admin
-   git clone https://github.com/lejianwen/rustdesk-api-web
+   git clone https://github.com/h88782481/rustdesk-api-web
    cd rustdesk-api-web
    npm install
    npm run build
@@ -279,7 +279,7 @@ Download the release from [release](https://github.com/lejianwen/rustdesk-api/re
 
 - Connection timeout issue resolved
 - Can enforce login before initiating a connection
-- github https://github.com/lejianwen/rustdesk-server
+- github https://github.com/h88782481/rustdesk-server
 
 ```yaml
  networks:
@@ -295,7 +295,7 @@ Download the release from [release](https://github.com/lejianwen/rustdesk-api/re
        - 21117:21117
        - 21118:21118
        - 21119:21119
-     image: lejianwen/rustdesk-server-s6:latest
+     image: ghcr.io/h88782481/rustdesk-server-s6:latest
      environment:
        - RELAY=<relay_server[:port]>
        - ENCRYPTED_ONLY=1
@@ -325,11 +325,11 @@ Download the release from [release](https://github.com/lejianwen/rustdesk-api/re
 
 Thanks to everyone who contributed!
 
-<a href="https://github.com/lejianwen/rustdesk-api/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=lejianwen/rustdesk-api" />
+<a href="https://github.com/h88782481/rustdesk-api/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=h88782481/rustdesk-api" />
 </a>
 
 ## Thanks for your support! If you find this project useful, please give it a ⭐️. Thank you!
 
 
-[lejianwen/rustdesk-server]: https://github.com/lejianwen/rustdesk-server
+[h88782481/rustdesk-server]: https://github.com/h88782481/rustdesk-server
