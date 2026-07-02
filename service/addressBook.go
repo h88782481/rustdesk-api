@@ -51,6 +51,14 @@ func (s *AddressBookService) AddAddressBook(ab *model.AddressBook) error {
 	return DB.Create(ab).Error
 }
 
+// ChangeId 设备id变更后，同步修正所有用户地址簿中的旧id
+func (s *AddressBookService) ChangeId(oldId, newId string) error {
+	if oldId == "" || newId == "" || oldId == newId {
+		return nil
+	}
+	return DB.Model(&model.AddressBook{}).Where("id = ?", oldId).Update("id", newId).Error
+}
+
 // UpdateAddressBook
 func (s *AddressBookService) UpdateAddressBook(abs []*model.AddressBook, userId uint) error {
 	//比较peers和数据库中的数据，如果peers中的数据在数据库中不存在，则添加，如果存在则更新，如果数据库中的数据在peers中不存在，则删除

@@ -19,6 +19,20 @@ func (ps *PeerService) FindByUuid(uuid string) *model.Peer {
 	DB.Where("uuid = ?", uuid).First(p)
 	return p
 }
+
+// FindByHardware 根据硬件特征(CPU、主机名、内存)查找设备。
+// 用于设备id或uuid变化后识别出同一台设备，避免产生重复记录。
+// 三个字段都非空才参与匹配；命中多条时取最近在线的一条。
+func (ps *PeerService) FindByHardware(cpu, hostname, memory string) *model.Peer {
+	p := &model.Peer{}
+	if cpu == "" || hostname == "" || memory == "" {
+		return p
+	}
+	DB.Where("cpu = ? and hostname = ? and memory = ?", cpu, hostname, memory).
+		Order("last_online_time desc").
+		First(p)
+	return p
+}
 func (ps *PeerService) InfoByRowId(id uint) *model.Peer {
 	p := &model.Peer{}
 	DB.Where("row_id = ?", id).First(p)

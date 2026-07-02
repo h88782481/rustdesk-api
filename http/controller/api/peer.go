@@ -33,6 +33,29 @@ func (p *Peer) SysInfo(c *gin.Context) {
 	fpe := f.ToPeer()
 	pe := service.AllService.PeerService.FindById(f.Id)
 	if pe.RowId == 0 {
+		// id未找到：可能是设备改了id或MachineGuid(uuid)后重新上报。
+		// 按CPU、主机名、内存三个维度匹配旧记录，命中则视为同一台设备，
+		// 覆盖旧记录(含id、uuid)，并同步修正地址簿中的旧id，避免出现重复设备。
+		old := service.AllService.PeerService.FindByHardware(f.Cpu, f.Hostname, f.Memory)
+		if old.RowId > 0 {
+			oldId := old.Id
+			fpe.RowId = old.RowId
+			fpe.UserId = old.UserId
+			if fpe.UserId == 0 {
+				fpe.UserId = service.AllService.UserService.FindLatestUserIdFromLoginLogByUuid(fpe.Uuid, fpe.Id)
+			}
+			err = service.AllService.PeerService.Update(fpe)
+			if err != nil {
+				response.Error(c, response.TranslateMsg(c, "OperationFailed")+err.Error())
+				return
+			}
+			if err = service.AllService.AddressBookService.ChangeId(oldId, fpe.Id); err != nil {
+				response.Error(c, response.TranslateMsg(c, "OperationFailed")+err.Error())
+				return
+			}
+			c.String(http.StatusOK, "SYSINFO_UPDATED")
+			return
+		}
 		pe = f.ToPeer()
 		pe.UserId = service.AllService.UserService.FindLatestUserIdFromLoginLogByUuid(pe.Uuid, pe.Id)
 		err = service.AllService.PeerService.Create(pe)
